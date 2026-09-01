@@ -6,4 +6,4 @@ export default function Header(){
     <nav className="navlinks"><Link href="/">Home</Link><Link href="/trains">Trains</Link><Link href="/stations">Stations</Link><Link href="/routes">Routes</Link></nav>
     <Link className="btn secondary" href="/trains">Find Train</Link>
   </div></header>
-}
+} 
