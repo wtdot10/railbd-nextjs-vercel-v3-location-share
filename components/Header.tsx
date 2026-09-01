@@ -1,0 +1,9 @@
+import Link from "next/link";
+
+export default function Header(){
+  return <header className="nav"><div className="container" style={{display:"flex",width:"100%",alignItems:"center",justifyContent:"space-between"}}>
+    <Link href="/" className="brand"><span className="brandIcon">🚆</span>RailBD</Link>
+    <nav className="navlinks"><Link href="/">Home</Link><Link href="/trains">Trains</Link><Link href="/stations">Stations</Link><Link href="/routes">Routes</Link></nav>
+    <Link className="btn secondary" href="/trains">Find Train</Link>
+  </div></header>
+}
