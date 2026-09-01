@@ -1,6 +1,2 @@
-import Header from "@/components/Header";
-import TrainCard from "@/components/TrainCard";
-import {trains} from "@/lib/data";
-export default function Trains(){
- return <><Header/><main className="details"><div className="eyebrow">BANGLADESH RAILWAY</div><h1>Trains</h1><p className="muted">Browse available train records.</p><div className="grid" style={{marginTop:25}}>{trains.map(t=><TrainCard key={t.number} train={t}/>)}</div></main></>
-}
+import Header from "@/components/Header";import TrainCard from "@/components/TrainCard";import {listTrains} from "@/lib/data";export const dynamic="force-dynamic";
+export default async function Trains({searchParams}:{searchParams:Promise<{q?:string}>}){const {q}=await searchParams;const trains=await listTrains(q);return <><Header/><main className="details wide"><div className="eyebrow">SUPABASE / TRAINS</div><h1>Trains</h1><p className="muted">{q?`Results for “${q}”`:"All train records currently stored in your database."}</p><form className="filter" action="/trains"><input name="q" defaultValue={q??""} placeholder="Filter by number or name"/><button className="btn">Filter</button></form>{trains.length?<div className="grid">{trains.map(t=><TrainCard key={t.id} train={t}/>)}</div>:<div className="emptyState">No train matched this search.</div>}</main></>}

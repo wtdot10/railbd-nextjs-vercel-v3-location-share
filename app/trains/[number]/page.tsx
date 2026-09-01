@@ -1,30 +1,3 @@
-import Header from "@/components/Header";
-import {getTrain,trains} from "@/lib/data";
-import {notFound} from "next/navigation";
-import ShareLocation from "@/components/ShareLocation";
-
-export function generateStaticParams(){return trains.map(t=>({number:t.number}));}
-
-export default async function TrainPage({params}:{params:Promise<{number:string}>}){
- const {number}=await params;
- const train=getTrain(number);
- if(!train) notFound();
- return <><Header/><main className="details">
-  <div className="eyebrow">TRAIN {train.number}</div><h1>{train.name}</h1><p className="muted">{train.nameBn} · {train.from} → {train.to}</p>
-  <div className="detailCard">
-   <span className="badge">● {train.status}</span>
-   <div className="progress"><i style={{width:`${train.progress}%`}}/></div>
-   <div className="route"><span>{train.from}</span><b>{train.progress}% journey</b><span>{train.to}</span></div>
-   <div className="detailGrid">
-    <div className="detailItem"><small>Delay</small><b>+{train.delay} min</b></div>
-    <div className="detailItem"><small>Next station</small><b>{train.nextStation}</b></div>
-    <div className="detailItem"><small>ETA</small><b>{train.eta}</b></div>
-    <div className="detailItem"><small>Speed</small><b>{train.speed} km/h</b></div>
-    <div className="detailItem"><small>From</small><b>{train.from}</b></div>
-    <div className="detailItem"><small>To</small><b>{train.to}</b></div>
-   </div>
-   <p className="muted" style={{marginTop:22}}>Demo status only. Replace this record with verified live railway data before publishing live-location claims.</p>
-  </div>
-  <ShareLocation trainNumber={train.number}/>
- </main></>
-}
+import {notFound} from "next/navigation";import Header from "@/components/Header";import ShareLocation from "@/components/ShareLocation";import LiveLocation from "@/components/LiveLocation";import {getTrain,getRouteForTrain} from "@/lib/data";export const dynamic="force-dynamic";
+function time(v:string|null){return v?v.slice(0,5):"—"}
+export default async function TrainPage({params}:{params:Promise<{number:string}>}){const {number}=await params;const train=await getTrain(number);if(!train)notFound();const stops=await getRouteForTrain(train.id);return <><Header/><main className="details wide"><div className="eyebrow">TRAIN {train.number}</div><h1>{train.name}</h1><p className="muted">{train.nameBn??""} · {train.from??"Origin unavailable"} → {train.to??"Destination unavailable"}</p><div className="detailCard"><div className="top"><span className={`badge ${train.active?"":"inactive"}`}>● {train.active?"Active":"Inactive"}</span><span className="number">{train.trainType??"Train"}</span></div>{train.progress!=null?<><div className="progress"><i style={{width:`${train.progress}%`}}/></div><div className="route"><span>Start</span><b>{train.progress}% live route</b><span>End</span></div></>:<div className="emptyLive">No verified live route progress is available.</div>}<div className="detailGrid"><div className="detailItem"><small>Train number</small><b>{train.number}</b></div><div className="detailItem"><small>Stops</small><b>{train.stationCount}</b></div><div className="detailItem"><small>Live speed</small><b>{train.speed!=null?`${train.speed} km/h`:"Not available"}</b></div><div className="detailItem"><small>GPS accuracy</small><b>{train.accuracy!=null?`${Math.round(train.accuracy)} m`:"Not available"}</b></div><div className="detailItem"><small>Last location</small><b>{train.updatedAt?new Date(train.updatedAt).toLocaleString():"No report"}</b></div><div className="detailItem"><small>Coordinates</small><b>{train.latitude!=null&&train.longitude!=null?`${train.latitude.toFixed(4)}, ${train.longitude.toFixed(4)}`:"No report"}</b></div></div></div><LiveLocation trainNumber={train.number}/><ShareLocation trainNumber={train.number}/><section className="detailCard"><div className="eyebrow">TIMETABLE</div><h2>Station-by-station route</h2>{stops.length?<div className="timeline">{stops.map(s=><div className="timelineRow" key={s.id}><div className="timelineDot"/><div className="timelineStation"><b>{s.station?.name??"Unknown station"}</b><span>{s.station?.nameBn??""}{s.station?.code?` · ${s.station.code}`:""}</span></div><div><small>Arrival</small><b>{time(s.arrivalTime)}</b></div><div><small>Departure</small><b>{time(s.departureTime)}</b></div><div><small>Distance</small><b>{s.distanceKm!=null?`${s.distanceKm} km`:"—"}</b></div></div>)}</div>:<div className="emptyState">This train exists in <b>trains</b>, but has no records in <b>train_route_stations</b> yet.</div>}</section></main></>}

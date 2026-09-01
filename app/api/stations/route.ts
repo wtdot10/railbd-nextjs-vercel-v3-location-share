@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server";import {listStations} from "@/lib/data";export const runtime="nodejs";
+export async function GET(request:Request){try{return NextResponse.json({success:true,source:"supabase",stations:await listStations(new URL(request.url).searchParams.get("q")??undefined)})}catch(e){return NextResponse.json({success:false,error:e instanceof Error?e.message:"Could not load stations"},{status:500})}}

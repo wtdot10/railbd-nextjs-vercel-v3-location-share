@@ -1,13 +1,3 @@
-import {NextResponse} from "next/server";
-import {supabaseAdmin} from "@/lib/supabase";
-export const runtime="nodejs";
-export async function GET(req:Request){
- const train=new URL(req.url).searchParams.get("train")?.trim();
- if(!train)return NextResponse.json({error:"train is required"},{status:400});
- const cutoff=new Date(Date.now()-10*60*1000).toISOString();
- const {data,error}=await supabaseAdmin.from("train_location_reports").select("lat,lng").eq("train_number",train).gte("updated_at",cutoff);
- if(error)return NextResponse.json({error:"Could not read locations"},{status:500});
- if(!data||data.length<3)return NextResponse.json({available:false,reporters:data?.length??0,message:"Waiting for at least 3 active location shares."});
- const lat=data.reduce((s,r)=>s+Number(r.lat),0)/data.length,lng=data.reduce((s,r)=>s+Number(r.lng),0)/data.length;
- return NextResponse.json({available:true,lat:Number(lat.toFixed(2)),lng:Number(lng.toFixed(2)),reporters:data.length,updatedAt:new Date().toISOString()});
-}
+import {NextResponse} from "next/server";import {supabaseAdmin} from "@/lib/supabase";export const runtime="nodejs";
+type Row={latitude:number;longitude:number;speed:number|null;created_at:string;session_id:string|null};
+export async function GET(req:Request){const train=new URL(req.url).searchParams.get("train")?.trim();if(!train)return NextResponse.json({success:false,error:"train is required"},{status:400});const cutoff=new Date(Date.now()-10*60*1000).toISOString();const {data,error}=await supabaseAdmin.from("train_locations").select("latitude,longitude,speed,accuracy,created_at,session_id").eq("train_number",train).gte("created_at",cutoff).order("created_at",{ascending:false});if(error)return NextResponse.json({success:false,error:error.message},{status:500});const rows=(data??[]) as Row[];const seen=new Set<string>();const latest=rows.filter((r:Row)=>{const key=r.session_id??`${r.created_at}-${r.latitude}-${r.longitude}`;if(seen.has(key))return false;seen.add(key);return true});if(!latest.length)return NextResponse.json({success:true,available:false,reporters:0,message:"No recent verified location reports."});const latitude=latest.reduce((s:number,r:Row)=>s+Number(r.latitude),0)/latest.length;const longitude=latest.reduce((s:number,r:Row)=>s+Number(r.longitude),0)/latest.length;const speeds=latest.filter((r:Row)=>r.speed!=null).map((r:Row)=>Number(r.speed));return NextResponse.json({success:true,available:true,latitude:Number(latitude.toFixed(6)),longitude:Number(longitude.toFixed(6)),speed:speeds.length?Number((speeds.reduce((a:number,b:number)=>a+b,0)/speeds.length).toFixed(1)):null,reporters:latest.length,updatedAt:latest[0].created_at})}

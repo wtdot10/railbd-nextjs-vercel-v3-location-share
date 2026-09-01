@@ -1,7 +1,2 @@
-import {NextResponse} from "next/server";
-import {getTrain} from "@/lib/data";
-export async function GET(_:Request,{params}:{params:Promise<{number:string}>}){
- const {number}=await params; const train=getTrain(number);
- if(!train)return NextResponse.json({error:"Train not found"},{status:404});
- return NextResponse.json({updatedAt:new Date().toISOString(),source:"demo",train});
-}
+import {NextResponse} from "next/server"; import {getTrain,getRouteForTrain} from "@/lib/data"; export const runtime="nodejs";
+export async function GET(_:Request,{params}:{params:Promise<{number:string}>}){try{const {number}=await params;const train=await getTrain(number);if(!train)return NextResponse.json({success:false,error:"Train not found"},{status:404});return NextResponse.json({success:true,source:"supabase",updatedAt:new Date().toISOString(),train,stops:await getRouteForTrain(train.id)})}catch(e){return NextResponse.json({success:false,error:e instanceof Error?e.message:"Could not load train"},{status:500})}}

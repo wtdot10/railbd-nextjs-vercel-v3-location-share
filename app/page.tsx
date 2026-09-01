@@ -1,37 +1,7 @@
-import Link from "next/link";
-import Header from "@/components/Header";
-import SearchBox from "@/components/SearchBox";
-import TrainCard from "@/components/TrainCard";
-import {trains} from "@/lib/data";
-
-export default function Home(){
- return <>
-  <Header/>
-  <main>
-   <section className="hero"><div className="container heroGrid">
-    <div><div className="eyebrow">● LIVE TRAIN PLATFORM</div><h1>Find where your train is.</h1><p>Search Bangladesh Railway trains, explore routes and schedules, and build a reliable live-tracking experience from verified data.</p><SearchBox/></div>
-    <div className="map"><div className="track"/><div className="station st1">Dhaka</div><div className="station st2">Tangail</div><div className="station st3">Jamalpur</div><div className="pin">🚆</div><div className="mapTag">Live map layer ready</div></div>
-   </div></section>
-
-   <section className="section"><div className="container">
-    <div className="head"><div><div className="eyebrow">TODAY</div><h2>Running now</h2></div><span className="muted">{trains.length} trains</span></div>
-    <div className="grid">{trains.map(t=><TrainCard key={t.number} train={t}/>)}</div>
-   </div></section>
-
-   <section className="section"><div className="container">
-    <div className="head"><div><div className="eyebrow">EXPLORE</div><h2>Popular routes</h2></div></div>
-    <div className="routeGrid">
-     {["Dhaka → Chattogram","Dhaka → Sylhet","Dhaka → Mymensingh","Dhaka → Kishoreganj","Dhaka → Cox's Bazar","Dhaka → Rajshahi"].map(x=><Link className="routeButton" href="/routes" key={x}>{x}</Link>)}
-    </div>
-   </div></section>
-
-   <section className="section info"><div className="container" style={{display:"contents"}}>
-    <div><div className="eyebrow">ABOUT RAILBD</div><h2>Built for reliable railway information.</h2><p>This starter separates the UI, API and data layer so real railway schedules can replace the demo dataset without rebuilding the website.</p></div>
-    <div className="feature"><b>01</b>Search trains by name or number.</div>
-    <div className="feature"><b>02</b>Open a dedicated train page.</div>
-    <div className="feature"><b>03</b>Add verified live data later.</div>
-   </div></section>
-  </main>
-  <footer className="footer">RailBD · Independent railway information project</footer>
- </>
-}
+import Link from "next/link";import Header from "@/components/Header";import SearchBox from "@/components/SearchBox";import TrainCard from "@/components/TrainCard";import {listStations,listTrains} from "@/lib/data";
+export const dynamic="force-dynamic";
+export default async function Home(){const [trains,stations]=await Promise.all([listTrains(),listStations()]);const active=trains.filter(t=>t.active);return <><Header/><main><section className="hero"><div className="container heroGrid"><div><div className="eyebrow">SUPABASE · LIVE DATA</div><h1>Bangladesh trains, from your database.</h1><p>Search the railway records stored in your Supabase project, inspect every route and station, and see verified community location reports when they exist.</p><SearchBox/></div><div className="map"><div className="mapGrid"/><div className="track"/><div className="station st1">Database</div><div className="station st2">Route</div><div className="station st3">Live</div><div className="pin">🚆</div><div className="mapTag">No demo coordinates</div></div></div></section>
+<section className="section"><div className="container"><div className="stats"><div><b>{trains.length}</b><span>Trains in database</span></div><div><b>{stations.length}</b><span>Stations in database</span></div><div><b>{active.length}</b><span>Active train records</span></div></div></div></section>
+<section className="section"><div className="container"><div className="head"><div><div className="eyebrow">DATABASE RECORDS</div><h2>Active trains</h2></div><Link href="/trains" className="muted">View all →</Link></div>{active.length?<div className="grid">{active.slice(0,9).map(t=><TrainCard key={t.id} train={t}/>)}</div>:<div className="emptyState">No active trains are marked in <b>trains.active</b>.</div>}</div></section>
+<section className="section"><div className="container"><div className="head"><div><div className="eyebrow">NETWORK</div><h2>Stations</h2></div><Link href="/stations" className="muted">View all →</Link></div><div className="routeGrid">{stations.slice(0,12).map(s=><Link href={`/stations/${s.id}`} className="routeButton" key={s.id}><b>{s.name}</b><span>{s.nameBn??""}{s.code?` · ${s.code}`:""}</span></Link>)}</div></div></section>
+<section className="section info"><div className="container infoGrid"><div><div className="eyebrow">RAILBD</div><h2>One source of truth: your Supabase project.</h2><p>The UI no longer contains the old demo train or station arrays. Train identity comes from <b>trains</b>, schedules from <b>train_route_stations</b>, station metadata from <b>stations</b>, and verified passenger locations from <b>train_locations</b>.</p></div><div className="feature"><b>01</b>Database search</div><div className="feature"><b>02</b>Route timetable</div><div className="feature"><b>03</b>Station explorer</div></div></section></main><footer className="footer">RailBD · Database-powered railway information</footer></>}

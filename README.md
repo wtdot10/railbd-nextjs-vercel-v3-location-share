@@ -1,105 +1,64 @@
-# RailBD — Next.js / Vercel V2
+# RailBD — Supabase database-powered train tracker
 
-Production-oriented starter for a Bangladesh railway information platform.
+This version is **database-first**. It does not contain a demo train/station dataset.
 
-## Stack
+## Database source
 
-- Next.js 16.3.3
-- React 19
-- TypeScript
-- App Router
-- Vercel-ready API routes
-- No external database required for the starter
+The app reads:
 
-## Local setup
+- `trains` — train number, name, Bengali name, type and active flag
+- `stations` — station code, names, coordinates and type
+- `train_route_stations` — ordered timetable/route stops
+- `train_locations` — recent accepted passenger GPS reports
+- `location_validations` — validation history
+- `train_routes` — optional PostGIS railway geometry used to verify passenger GPS
 
-Requirements: Node.js 24+ and npm/pnpm.
+## Features
+
+- Database-backed train search
+- Train directory with filtering
+- Train detail pages
+- Station-by-station timetable
+- Station directory and station detail pages
+- Trains calling at a station
+- Route explorer generated from `train_route_stations`
+- Passenger GPS sharing and server-side route verification
+- Recent verified live-location aggregation
+- Automatic live-location polling every 30 seconds
+- No fabricated delay, ETA, speed or position values
+- API endpoints for trains, stations, search and live location
+
+## Environment
+
+Create `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+SUPABASE_SERVICE_ROLE_KEY=your_server_only_service_role_key
+```
+
+Never expose `SUPABASE_SERVICE_ROLE_KEY` to browser/client code.
+
+## Database migration
+
+Run `supabase/production-migration.sql` in the Supabase SQL Editor. It is additive and does not seed fake railway records.
+
+Passenger location verification requires real railway geometry in `train_routes`. Without geometry, the app deliberately refuses to label a GPS report as verified.
+
+## Run
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Open http://localhost:3000.
-
-Production build:
+Production:
 
 ```bash
 npm run build
 npm start
 ```
 
-## API
+## Important deployment note
 
-- GET `/api/trains`
-- GET `/api/trains/705`
-
-## Deploy to Vercel
-
-1. Create a GitHub repository.
-2. Push this project.
-3. In Vercel, import the repository.
-4. Framework should be detected as Next.js.
-5. Deploy.
-
-Or with the CLI:
-
-```bash
-npm install -g vercel
-vercel login
-vercel
-vercel --prod
-```
-
-## Real-data migration
-
-The current `lib/data.ts` is deliberately marked as demo data. Do not publish these values as live railway positions.
-
-Recommended production database:
-
-- PostgreSQL
-- Prisma or Drizzle
-- trains
-- stations
-- train_stops
-- service_days
-- train_runs
-- live_positions
-- delay_events
-
-Then replace the API route implementations with database queries.
-
-## Live location
-
-A live map requires a legitimate, reliable location feed. The UI/API is ready for that integration, but this starter does not invent GPS positions.
-
-## Suggested production environment variables
-
-```text
-DATABASE_URL=
-RAILWAY_DATA_API_URL=
-RAILWAY_DATA_API_KEY=
-NEXT_PUBLIC_MAP_TILE_URL=
-```
-
-Keep private API keys server-side. Never expose them in `NEXT_PUBLIC_*`.
-
-## Important
-
-This project is an independent implementation. It does not copy TrainKothai source code, branding, private APIs, or proprietary assets.
-
-
-## Passenger location sharing (V3)
-
-Passengers can voluntarily share their phone GPS from a train page. Coordinates are rounded to a coarse ~1 km grid and the public API only returns an aggregate when at least 3 active reporters exist. Reports expire from the public result after 10 minutes without updates. Users can stop sharing at any time.
-
-### Supabase setup
-Run `supabase-schema.sql` in Supabase SQL Editor. Add these Vercel environment variables:
-
-`NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co`
-
-`SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY`
-
-Never expose the service-role key through `NEXT_PUBLIC_*`.
-
-The result is community-reported, not official railway GPS. Add rate limiting, cleanup, monitoring and a real map before production.
+If a service-role key was ever committed or shared outside the server environment, rotate it in Supabase and update Vercel's environment variable.
