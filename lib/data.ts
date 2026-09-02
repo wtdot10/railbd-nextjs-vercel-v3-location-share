@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "./supabase";
 
-export type Train = { id:number; number:string; name:string; nameBn:string|null; trainType:string|null; active:boolean; from:string|null; to:string|null; stationCount:number; progress:number|null; speed:number|null; accuracy:number|null; latitude:number|null; longitude:number|null; updatedAt:string|null };
-export type Station = { id:number; code:string|null; name:string; nameBn:string|null; latitude:number|null; longitude:number|null; type:string|null };
+export type Train = { id:number; number:string; name:string; name_bn:string|null; trainType:string|null; active:boolean; from:string|null; to:string|null; stationCount:number; progress:number|null; speed:number|null; accuracy:number|null; latitude:number|null; longitude:number|null; updatedAt:string|null };
+export type Station = { id:number; code:string|null; name:string; name_bn:string|null; latitude:number|null; longitude:number|null; type:string|null };
 export type Stop = { id:number; stationOrder:number; stopType:string|null; arrivalTime:string|null; departureTime:string|null; distanceKm:number|null; station:Station|null };
 export type Route = { train:{id:number;number:string;name:string;nameBn:string|null}; stops:Stop[] };
 
@@ -9,7 +9,7 @@ type TrainRow={id:number;number:string;name:string;name_bn:string|null;train_typ
 type StopRow={id:number;station_order:number;stop_type:string|null;arrival_time:string|null;departure_time:string|null;distance_km:number|null;stations:{id:number;code:string|null;name:string;name_bn:string|null;latitude:number|null;longitude:number|null;type:string|null}|null};
 type LocationRow={latitude:number;longitude:number;speed:number|null;accuracy:number|null;created_at:string};
 
-function mapStation(row:StopRow["stations"]):Station|null{return row?{id:row.id,code:row.code,name:row.name,nameBn:row.name_bn,latitude:row.latitude,longitude:row.longitude,type:row.type}:null}
+function mapStation(row:StopRow["stations"]):Station|null{return row?{id:row.id,code:row.code,name:row.name,name_bn:row.name_bn,latitude:row.latitude,longitude:row.longitude,type:row.type}:null}
 export async function getRouteForTrain(trainId:number):Promise<Stop[]>{
  const {data,error}=await supabaseAdmin.from("train_route_stations").select("id, station_order, stop_type, arrival_time, departure_time, distance_km, stations(id, code, name, name_bn, latitude, longitude, type)").eq("train_id",trainId).order("station_order",{ascending:true});
  if(error) throw new Error(`Could not load train route: ${error.message}`);
@@ -21,7 +21,7 @@ async function latestLocations(numbers:string[]){
  if(error) throw new Error(`Could not load live train locations: ${error.message}`);
  for(const row of (data??[]) as Array<LocationRow&{train_number:string}>){if(!result.has(row.train_number))result.set(row.train_number,row)} return result;
 }
-function toTrain(row:TrainRow,stops:Stop[],live?:LocationRow):Train{return{id:row.id,number:row.number,name:row.name,nameBn:row.name_bn,trainType:row.train_type,active:row.active,from:stops[0]?.station?.name??null,to:stops.at(-1)?.station?.name??null,stationCount:stops.length,progress:null,speed:live?.speed==null?null:Number(live.speed),accuracy:live?.accuracy==null?null:Number(live.accuracy),latitude:live?.latitude==null?null:Number(live.latitude),longitude:live?.longitude==null?null:Number(live.longitude),updatedAt:live?.created_at??null}}
+function toTrain(row:TrainRow,stops:Stop[],live?:LocationRow):Train{return{id:row.id,number:row.number,name:row.name,name_bn:row.name_bn,trainType:row.train_type,active:row.active,from:stops[0]?.station?.name??null,to:stops.at(-1)?.station?.name??null,stationCount:stops.length,progress:null,speed:live?.speed==null?null:Number(live.speed),accuracy:live?.accuracy==null?null:Number(live.accuracy),latitude:live?.latitude==null?null:Number(live.latitude),longitude:live?.longitude==null?null:Number(live.longitude),updatedAt:live?.created_at??null}}
 export async function listTrains(query?:string):Promise<Train[]>{
  let request=supabaseAdmin.from("trains").select("id, number, name, name_bn, train_type, active").order("active",{ascending:false}).order("name",{ascending:true}); const q=query?.trim(); if(q)request=request.or(`number.ilike.%${q}%,name.ilike.%${q}%,name_bn.ilike.%${q}%`);
  const {data,error}=await request; if(error)throw new Error(`Could not load trains: ${error.message}`); const rows=(data??[]) as TrainRow[]; const locations=await latestLocations(rows.map(r=>r.number));
